@@ -1,6 +1,22 @@
 ---
-title: "Project_2"
-output: html_document
-date: "2025-10-22"
+title: "Sales Volume Analysis of BMW Cars"
+author: "Albert Jojo"
+date: " `r Sys.Date()`"
+output: 
+    pdf_document:
+        toc: False
+        highlight: tango
+        fig_caption: True
+        fig_crop: True
+fontsize: 12pt
+mainfont: Times New Roman
+editor_options:
+    markdown:
+        wrap: 100
 ---
+# 1. Abstract
+This project investigates the various factors that affected BMW vehicle sales from 2010 to 2024 across global regions. Utilizing multiple regression analysis in R, we examined various factors like price, engine size, mileage, fuel type, transmission, and region influence sales volume. The goal is to develop a model that predicts sales volume and identifies key factors behind BMW's sales performance
+
+
+# 2. Objectives
 
