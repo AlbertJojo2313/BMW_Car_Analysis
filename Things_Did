@@ -1,0 +1,38 @@
+
+----- (10/27/25)
+1. Creating a subset of 10,000 rows to prevent overplotting.
+2. Added sub_functions for plotting multiple types of plots
+3. Added a master function for plotting to control the sub_function behavior
+
+
+
+"""
+tesla_stock <- tesla_stock %>% rename(
+    Close  = "TSLA_Close",
+    High  = "TSLA_High",
+    Low  = "TSLA_Low",
+    Open  = "TSLA_Open",
+    Volume  = "TSLA_Volume"
+)
+netflix_stock <- netflix_stock %>% rename(
+    Close  = "NFLX_Close",
+    High  = "NFLX_High",
+    Low  = "NFLX_Low",
+    Open  = "NFLX_Open",
+    Volume  = "NFLX_Volume"
+)
+google_stock <- google_stock %>% rename(
+    Close  = "GOOG_Close",
+    High  = "GOOG_High",
+    Low  = "GOOG_Low",
+    Open  = "GOOG_Open",
+    Volume  = "GOOG_Volume"
+)
+apple_stock <- apple_stock %>% rename(
+    Close  = "AAPL_Close",
+    High  = "AAPL_High",
+    Low  = "APPL_Low",
+    Open  = "APPL_Open",
+    Volume  = "APPL_Volume"
+)
+"""
