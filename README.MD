@@ -1,6 +1,6 @@
-### BMW Car Sales Volume Analysis
+### Stock Price Analysis
 
-A project analyzing BMW Car Sales Volume from the years 2010-2024.
+A project analyzing 4 of the most popular and revenue generating stocks from 2020 - 2024.
 
 ### Modifying the Project
 1. Make a new branch in your name
