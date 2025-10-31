@@ -1,56 +1,143 @@
 library(dplyr)
-### Data Processing
-tesla_stock <- read.csv("data/TSLA.csv", )
+library(ggplot2)
+
+# --- Data Loading ---
+tesla_stock <- read.csv("data/TSLA.csv")
 google_stock <- read.csv("data/GoogleStockPrices.csv")
 netflix_stock <- read.csv("data/Netflix_Data.csv")
 apple_stock <- read.csv("data/apple_5yr_one.csv")
 
-process_df <- function(df) {
+# --- Data Structure ---
+stocks <- list(
+    TSLA = tesla_stock,
+    GOOGL = google_stock,
+    NFLX = netflix_stock,
+    AAPL = apple_stock
+)
+# --- Processing Function ---
+process_dfs <- function(stocks) {
     drop_cols <- c("X", "Adj.Close", "Adj Close", "Adj_Close")
-    df <- df %>% select(-any_of(drop_cols))
+    for (name in names(stocks)) {
+        df <- stocks[[name]]
+        df <- df %>% select(-any_of(drop_cols))
+        df[["Date"]] <- as.Date(df[["Date"]])
+        # Filter by years 2020–2024
+        df <- df %>% filter(format(Date, "%Y") >= 2020 & format(Date, "%Y") <= 2024)
 
-    df[["Date"]] <- as.Date(df[["Date"]])
-
-    return(df)
-}
-
-tesla_stock <- process_df(tesla_stock)
-netflix_stock <- process_df(netflix_stock)
-apple_stock <- process_df(apple_stock)
-google_stock <- process_df(google_stock)
-
-
-create_subset <- function(df, size = 500) {
-    sample_df <- df[sample(nrow(df), min(size, nrow(df))), ]
-    return(sample_df)
-}
-
-# --- New Correlation Matrix + Heatmap Function ---
-plot_correlation_matrix <- function(df, save_path = NULL) {
-    numeric_df <- df %>% select(where(is.numeric))
-    if (ncol(numeric_df) < 2) {
-        warning("Not enough numeric columns for correlation matrix.")
-        return(NULL)
+        stocks[[name]] <- df
     }
-
-    corr_matrix <- cor(numeric_df, use = "complete.obs")
-    corr_melt <- melt(corr_matrix)
-
-    p <- ggplot(corr_melt, aes(Var1, Var2, fill = value)) +
-        geom_tile(color = "white") +
-        scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0) +
-        labs(
-            title = "Correlation Matrix Heatmap",
-            x = "",
-            y = "",
-            fill = "Correlation"
-        ) +
-        theme_minimal() +
-        theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-
-    if (!is.null(save_path)) ggsave(filename = save_path, plot = p, width = 8, height = 6)
-    return(p)
+    return(stocks)
 }
-print(plot_correlation_matrix(tesla_stock))
-print(plot_correlation_matrix(netflix_stock))
-print(plot_correlation_matrix(google_stock))
+
+# --- Histogram Plot Function ---
+plot_histograms <- function(stocks, save_path = NULL) {
+    for (symbol in names(stocks)) {
+        df <- stocks[[symbol]]
+        plot_list <- list()
+        numeric_cols <- names(df)[sapply(df, is.numeric)]
+
+        for (col_name in numeric_cols) {
+            p <- ggplot(df, aes(x = .data[[col_name]])) +
+                geom_histogram(fill = "blue", color = "black", alpha = 0.7, bins = 30) +
+                geom_vline(aes(xintercept = mean(.data[[col_name]], na.rm = TRUE)),
+                    color = "green", linetype = "dashed", linewidth = 1
+                ) +
+                geom_vline(aes(xintercept = median(.data[[col_name]], na.rm = TRUE)),
+                    color = "red", linetype = "dashed", linewidth = 1
+                ) +
+                labs(
+                    title = paste("Histogram of", col_name, "in", symbol),
+                    x = col_name,
+                    y = "Frequency"
+                ) +
+                theme_minimal()
+
+            plot_list[[col_name]] <- p
+
+
+            if (!is.null(save_path)) {
+                subfolder <- file.path(save_path, symbol)
+                if (!dir.exists(subfolder)) {
+                    dir.create(subfolder, recursive = TRUE)
+                }
+
+                file_name <- file.path(subfolder, paste0(symbol, "_", col_name, "_hist.png"))
+                ggsave(file_name, plot = p, width = 6, height = 4)
+            }
+        }
+    }
+    invisible(NULL)
+}
+
+plot_box_plts <- function(stocks, save_path = NULL) {
+    for (symbol in names(stocks)) {
+        df <- stocks[[symbol]]
+        plot_list <- list()
+        numeric_cols <- names(df)[sapply(df, is.numeric)]
+
+        for (col_name in numeric_cols) {
+            # Calc stats
+            col_data <- df[[col_name]]
+            q1 <- quantile(col_data, 0.25, na.rm = TRUE)
+            q2 <- median(col_data, na.rm = TRUE)
+            q3 <- quantile(col_data, 0.75, na.rm = TRUE)
+            iqr <- IQR(col_data, na.rm = TRUE)
+
+            # Whisker boundaries
+            lower_whisker <- q1 - 1.5 * iqr
+            upper_whisker <- q3 + 1.5 * iqr
+
+            # Outliers
+            outliers <- col_data[col_data < lower_whisker | col_data > upper_whisker]
+
+            # Plot
+            p <- ggplot(df, aes(x = "", y = .data[[col_name]])) +
+                geom_boxplot(
+                    fill = "skyblue", color = "black",
+                    outlier.color = "red", outlier.shape = 16, outlier.size = 3
+                ) +
+                # Labels positioned ON the box plot
+                annotate("text",
+                    x = 1.4, y = q1,
+                    label = paste("Q1 =", round(q1, 2)),
+                    hjust = 0, color = "blue", size = 3.5, fontface = "bold"
+                ) +
+                annotate("text",
+                    x = 1.4, y = q2,
+                    label = paste("Median =", round(q2, 2)),
+                    hjust = 0, color = "darkgreen", size = 4, fontface = "bold"
+                ) +
+                annotate("text",
+                    x = 1.4, y = q3,
+                    label = paste("Q3 =", round(q3, 2)),
+                    hjust = 0, color = "blue", size = 3.5, fontface = "bold"
+                ) +
+                labs(
+                    title = paste("Box Plot of", col_name, "in", symbol),
+                    x = "",
+                    y = col_name
+                ) +
+                theme_minimal() +
+                theme(
+                    axis.text.x = element_blank(),
+                    axis.ticks.x = element_blank()
+                )
+            plot_list[[col_name]] <- p
+
+            if (!is.null(save_path)) {
+                subfolder <- file.path(save_path, symbol)
+                if (!dir.exists(subfolder)) {
+                    dir.create(subfolder, recursive = TRUE)
+                }
+                file_name <- file.path(subfolder, paste0(symbol, "_", col_name, "_boxplt.png"))
+                ggsave(file_name, plot = p, width = 7, height = 6)
+            }
+        }
+    }
+    invisible(NULL)
+}
+
+# --- Run ---
+stocks <- process_dfs(stocks)
+print(plot_histograms(stocks))
+print(plot_box_plts(stocks))
