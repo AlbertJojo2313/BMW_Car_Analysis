@@ -8,3 +8,7 @@
 2. Made a named list to hold the different dataframes. Did this for easier lookup times and access.
 3. Implemented functions for box_plots, and histograms
 4. Probably need to reduce the stocks that we are looking (Still debating)
+
+---- (10/31/25)
+1. Implemented functions for time_series and boxplots.
+2. Split the plotting functions in separate folder for easier access and debugging.
